@@ -276,6 +276,10 @@ ul, menu, dir {
 	color: #2094CA;
 }
 
+#networks .twitter:hover {
+	color: #d9e6f7;
+}
+
 #networks .mail:hover {
 	color: #f39c12;
 }
