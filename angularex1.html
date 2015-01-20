@@ -18,7 +18,7 @@ body{
 </style>
 <script>
 function ctrl($scope){
-  $scope.rows = ['INC001','INC002','INC003'];
+  $scope.rows = ['INC001','KB002','WO007'];
   $scope.temp = false;
   
   $scope.addRow = function(){
@@ -50,7 +50,8 @@ function ctrl($scope){
 </script>
 </head>
 <body ng-controller="ctrl">
-  <h2>{{rows.length}} incident{{plural(rows)}} <span ng-show="temp">?<small class="muted"><em > (only {{rows.length-1}} actually....)</em></small></span></h2>
+  <h1>Console</h1>
+  <h2>Total: {{rows.length}} incident{{plural(rows)}} <span ng-show="temp">?<small class="muted"><em > (only {{rows.length-1}} actually....)</em></small></span></h2>
   <form class="form-horizontal">
   <span ng-class="{'input-append':addName}">
     <input id="add" type="text" placeholder="Another one ?" ng-model="addName" ng-change="addTemp()"/>
