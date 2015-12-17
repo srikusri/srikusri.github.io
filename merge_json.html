@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.min.js"></script>
+    <script type="text/javascript">
+    function merge() {
+      var src = JSON.parse($('#1').val());
+      var des = JSON.parse($('#2').val());
+      for(key in src) {
+        if(!des[key]) {
+          des[key] = src[key];
+        }
+      }
+      $('#1').val('')
+      $('#2').val('')
+      var text_json = JSON.stringify(des, undefined, 4);
+      $('#3').text(text_json);
+    }
+    </script>
+  </head>
+  <body>
+    <div>
+      <label>Converted File JSON</label>
+      <textarea id="1" style="width:95%; height:300px;margin: 10px;"></textarea>
+    </div>
+    <div>
+      <label>Current version File JSON</label>
+      <textarea id="2" style="width:95%; height:300px;margin: 10px;"></textarea>
+    </div>
+    <hr/>
+    <div>
+      <a href="#" onClick="merge()">Merge File</a>
+      <pre id="3" style="height:300px;margin: 10px;border: 1px solid lightGrey"></pre>
+    </div>
+  </body>
+</html>
