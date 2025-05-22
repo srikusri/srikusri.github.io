@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Context Protocol (MCP) Presentation</title>
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+  <!-- Tailwind CSS for additional styling -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .reveal section img {
+      max-height: 580px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+    .reveal .slide-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .reveal .text-content {
+      flex: 1;
+      padding: 20px;
+    }
+    .reveal .image-content {
+      flex: 1;
+      text-align: center;
+    }
+    .text-lg {
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <!-- Slide 1: What is MCP? -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">What is MCP?</h3>
+        <p class="text-lg">
+          The Model Context Protocol (MCP) is an open-source protocol that enables Large Language Models (LLMs) to seamlessly interact with external tools and data sources. <br/>
+          It provides a standardized way for AI models to access and process data from various systems, such as databases, APIs, or file storage, enhancing their capabilities beyond text generation.
+        </p>
+      </section>
+
+      <!-- Slide 2: Why MCP? -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">Why MCP?</h3>
+        <p class="text-lg">
+          MCP addresses the limitations of traditional LLMs by enabling secure and efficient integration with external systems. It allows AI models to:
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li>Access real-time data from diverse sources like PostgreSQL or Google Drive.</li>
+          <li>Execute functions securely with user approval.</li>
+          <li>Provide structured interactions, improving reliability and scalability.</li>
+          <li>Enable developers to build AI-driven applications with seamless tool integration.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 3: Background on Function Calling and MCP -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">From Function Calling to MCP</h3>
+        <div class="slide-content">
+          <div class="text-content">
+            <p class="text-lg">
+              Function calling in LLMs allows models to invoke predefined functions to perform tasks, such as querying a database or calling an API. However, this approach is often limited by rigid structures and lack of standardization across platforms.
+            </p>
+            <p class="text-lg mt-4">
+              MCP evolves function calling by introducing a standardized protocol that:
+            </p>
+            <ul class="list-disc text-lg ml-8">
+              <li>Facilitates dynamic interactions between LLMs and external systems.</li>
+              <li>Supports a client-server model for secure and scalable communication.</li>
+              <li>Provides reusable building blocks for consistent integration.</li>
+            </ul>
+          </div>
+          <div class="image-content">
+            <img src="https://cdn.openai.com/API/docs/images/function-calling-diagram-steps.png" alt="Function Calling in LLMs">
+          </div>
+      </section>
+
+      <!-- Slide 4: General Architecture -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">General Architecture</h3>
+        <div class="slide-content">
+          <div class="text-content">
+            <p class="text-lg">
+              MCP follows a client-server model with 3 key components:
+            </p>
+            <ul class="list-disc text-lg ml-8">
+              <li><strong>Host:</strong> AI applications like Claude that provide the environment for AI interactions, enabling access to tools and data sources. The host runs the MCP Client.</li>
+              <li><strong>MCP Client:</strong> Embedded in AI models (e.g., Claude), it formats requests into structured messages to communicate with MCP Servers.</li>
+              <li><strong>MCP Server:</strong> Acts as a middleman connecting AI models to external systems like PostgreSQL, Google Drive, or APIs.</li>
+            </ul>
+            <p class="text-lg mt-4">
+              MCP has five core building blocks (primitives):
+            </p>
+            <ul class="list-disc text-lg ml-8">
+              <li><strong>Clients:</strong> Roots (secure file access), Sampling (task assistance, e.g., generating DB queries).</li>
+              <li><strong>Servers:</strong> Prompts (AI instructions), Resources (data objects), Tools (callable functions).</li>
+            </ul>
+          </div>
+          <div class="image-content">
+            <img src="https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F840e868d-2c83-4b1b-a881-df1da6c6e332_1309x1536.gif" alt="MCP Architecture">
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5: Architecture Continued with Updated Image -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">Core MCP Concepts</h3>
+        <div class="slide-content">
+          <div class="text-content">
+            <p class="text-lg">
+              MCP servers provide three main types of capabilities:
+            </p>
+            <ul class="list-disc text-lg ml-8">
+              <li><strong>Resources:</strong> File-like data that can be read by clients (e.g., API responses or file contents).</li>
+              <li><strong>Tools:</strong> Functions that can be called by the LLM (with user approval).</li>
+              <li><strong>Prompts:</strong> Pre-written templates that help users accomplish specific tasks.</li>
+            </ul>
+          </div>
+          <div class="image-content">
+            <img src="https://miro.medium.com/v2/resize:fit:1400/format:webp/1*MfI2XLk63rQye0Sh-hAUag.png" alt="Model Context Protocol Architecture">
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Notes on JSON-RPC 2.0 -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">JSON-RPC 2.0</h3>
+        <p class="text-lg">
+          JSON-RPC 2.0 is a lightweight, stateless protocol for remote procedure calls using JSON:
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li><strong>Structure:</strong> Requests and responses follow a strict JSON format with "method", "params", "id", and optional "error" fields.</li>
+          <li><strong>Usage:</strong> Enables clients to call server methods over HTTP, WebSocket, or other transports (e.g., invoking a database query).</li>
+          <li><strong>Relevance to MCP:</strong> MCP could leverage JSON-RPC for structured communication between clients and servers, ensuring standardized data exchange.</li>
+          <li><strong>Benefits:</strong> Simple, language-agnostic, and supports batch requests for efficiency.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 7: Notes on SSE -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">SSE (Server-Sent Events)</h3>
+        <p class="text-lg">
+          SSE enables servers to push real-time updates to clients over HTTP:
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li><strong>Mechanism:</strong> Uses a single, long-lived HTTP connection where the server sends events in a text/event-stream format.</li>
+          <li><strong>Usage:</strong> Ideal for real-time updates like notifications, live feeds, or monitoring dashboards.</li>
+          <li><strong>Relevance to MCP:</strong> MCP server when running in remote could use SSE for scenarios requiring HTTP compatibility
+            and security implications including authentication and authorization</li>
+          <li><strong>Benefits:</strong> Lightweight, built on HTTP, supports automatic reconnection, and simpler than WebSockets for one-way communication.</li>
+        </ul>
+      </section>
+
+       <!-- Slide 8: MCP Demo -->
+       <section>
+        <h3 class="text-4xl font-bold mb-4">MCP Demo</h3>
+        <p class="text-lg">
+          Explore real-world applications of MCP:
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li><strong>ITSM MCP:</strong> Integrates AI with IT Service Management tools to automate ticket resolution and data retrieval.</li>
+          <li><strong>AIOPs MCP:</strong> Enhances AI-driven IT operations by connecting LLMs to monitoring systems for real-time insights and automated actions.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 9: MCP Extensions - NLWeb and Copilot Studio -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">MCP Extensions: NLWeb & Copilot Studio</h3>
+        <p class="text-lg">
+          MCP extends functionality through integrations like NLWeb and Copilot Studio:
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li><strong>NLWeb:</strong> An open project that turns websites into AI apps with natural language interfaces; acts as an MCP server to make content discoverable to AI agents.</li>
+          <li><strong>Uses:</strong> Leverages Schema.org and RSS data, enhanced by LLMs, to enable users to query websites conversationally.</li>
+          <li><strong>Copilot Studio:</strong> MCP enables agents to access external data/tools (e.g., APIs) securely with user approval.</li>
+          <li><strong>Features:</strong> Supports runtime authorization and tool-level access for secure, versatile AI workflows.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 10: MCP Support in Windows 11 -->
+      <section>
+        <h3 class="text-4xl font-bold mb-4">MCP Support in Windows 11</h3>
+        <p class="text-lg">
+          Windows 11 integrates MCP to enable secure AI agents, becoming an "agentic OS":
+        </p>
+        <ul class="list-disc text-lg ml-8">
+          <li><strong>Integration:</strong> MCP allows AI models to interact with external tools/data seamlessly.</li>
+          <li><strong>Security:</strong> Features proxy-mediated communication, tool-level authorization, and runtime checks.</li>
+          <li><strong>Impact:</strong> Supports developers in building interoperable AI applications on Windows 11.</li>
+          <li><strong>Announcement:</strong> Introduced at Build 2025, enhancing automation and agent-driven tasks.</li>
+        </ul>
+      </section>
+
+      <!-- slide 11: Conclusion & External links -->
+      <section>
+        <h3 class="text-4xl font-bold mb-6">Conclusion & Resources</h3>
+        <div class="slide-content">
+          <div class="text-content">
+            <p class="text-lg">
+              The Model Context Protocol (MCP) is transforming the way AI models interact with external systems by enabling secure, standardized, 
+              and efficient integrations. With MCP, developers can create advanced AI-driven applications that seamlessly connect to a variety of tools 
+              and data sources.
+              <br/>
+              Explore the following resources to learn more about MCP: <a href="https://modelcontextprotocol.io/introduction" target="_blank" class="text-blue-500 underline">
+                Official MCP Documentation
+              </a>
+            </p>
+          </div>
+          <div class="image-content">
+              <iframe 
+              width="100%" 
+              height="315" 
+              src="https://www.youtube.com/embed/GNfQM88Vthc" 
+              title="MCP Overview Video" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen>
+            </iframe>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Reveal.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      Reveal.initialize({
+        hash: true,
+        transition: 'slide',
+        width: 960,
+        height: 700
+      });
+    });
+  </script>
+</body>
+</html>
