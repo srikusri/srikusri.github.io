@@ -14,6 +14,9 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .doc-pane {
+      max-height: 65vh;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
@@ -140,18 +143,26 @@
       <aside class="space-y-4">
         <!-- Blog header -->
         <div class="bg-white rounded shadow p-5">
-          <h3 class="text-xl font-semibold" id="docTitle">Explore API Docs</h3>
-          <p class="text-sm text-gray-600" id="docIntro">Click an example on the left to view the corresponding documentation, examples, and code snippets. Documentation is stored as JSON and rendered here.</p>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-xl font-semibold" id="docTitle">Explore API Docs</h3>
+              <p class="text-sm text-gray-600" id="docIntro">Click an example on the left to view the corresponding documentation, examples, and code snippets. Documentation is stored as JSON and rendered here.</p>
+            </div>
+            <button id="toggleJsonBtn" class="shrink-0 text-sm px-3 py-2 border rounded text-gray-700 hover:bg-gray-50">
+              Show JSON
+            </button>
+          </div>
         </div>
 
         <!-- Rendered documentation pane -->
-        <div id="docPane" class="bg-white rounded shadow p-5 overflow-auto" style="max-height:65vh;">
+        <div id="docPane" class="bg-white rounded shadow p-5 overflow-auto doc-pane">
           <!-- By default show a friendly intro blog-style -->
           <article id="docContent">
             <h4 class="text-lg font-semibold">Welcome to the Web AI blog</h4>
             <p class="text-gray-700 mt-2">This playground demonstrates three built-in Chrome AI APIs.</p>
             <p class="text-sm text-gray-600 mt-2">Example docs include: overview, flags/requirements, parameters, sample code, and suggested use-cases.</p>
           </article>
+          <pre id="rawJson" class="hidden mt-4 p-3 bg-gray-50 border rounded text-xs code"></pre>
         </div>
 
          <!-- Small tips area -->
@@ -167,7 +178,7 @@
 
     <!-- Footer -->
     <footer class="mt-6 text-center text-sm text-gray-600">
-      Built as an educational demo — APIs may differ across Chrome builds. Check <code>window.ai</code> in DevTools for exact names.
+      Built as an educational demo — APIs may differ across Chrome builds. Check <code>globalThis.ai</code> (or <code>window.ai</code>) in DevTools for exact names.
     </footer>
   </div>
 
@@ -182,18 +193,29 @@
           "title": "Summarizer API — On-device summarization",
           "summary": "Condenses long blocks of text into shorter summaries or key points using Chrome's on-device Gemini Nano model.",
           "flags": ["#summarizer-api", "#optimization-guide-on-device-model"],
-          "requirements": "Chrome 138+ (Canary/Dev recommended). May download a model (~100s MB to GB depending on build).",
+          "requirements": "Available from Chrome 138. May download a model on first use; check availability() and show download progress to users.",
           "options": {
             "type": "tldr | key-points | teaser | headline",
             "format": "plain-text | markdown",
             "length": "short | medium | long"
           },
           "code_sample": `// Check if Summarizer API is available
-if ('Summarizer' in window) {
+if ('Summarizer' in self) {
+  const availability = await Summarizer.availability();
+  if (availability === 'unavailable') return;
+
+  // Check for user activation before creating the summarizer
+  if (!navigator.userActivation.isActive) return;
+
   const summarizer = await Summarizer.create({
     type: 'key-points',
     format: 'plain-text',
     length: 'short',
+    monitor(m) {
+      m.addEventListener('downloadprogress', (e) => {
+        console.log(\`Downloaded \${e.loaded * 100}%\`);
+      });
+    },
   });
   const summary = await summarizer.summarize('Long text to summarize...');
   summarizer.destroy();
@@ -218,29 +240,34 @@ if ('Summarizer' in window) {
           "title": "Prompt API — Interactive text generation",
           "summary": "Send natural language prompts to an on-device language model. Supports streaming for real-time typing effects and multimodal inputs in some builds.",
           "flags": ["#prompt-api-for-gemini-nano", "#optimization-guide-on-device-model"],
-          "requirements": "Chrome 138+. Streaming may be supported via promptStreaming() on the session object.",
+          "requirements": "Available from Chrome 138 (see docs). Call LanguageModel.availability() before create(); model may download on first use. Use AbortSignal to stop prompts.",
           "options": {
-            "systemPrompt": "String (sets AI persona/behavior)",
-            "expectedInputs": "Optional for multimodal (audio/image)",
-            "streaming": "Yes — use promptStreaming()"
+            "availability": "await LanguageModel.availability(options)",
+            "create": "await LanguageModel.create() (after user activation)",
+            "streaming": "session.promptStreaming(text, { signal })"
           },
           "code_sample": `// Check if LanguageModel API is available
-if ('LanguageModel' in window) {
-  const session = await LanguageModel.create({
-    systemPrompt: 'You are a helpful assistant.'
+if ('LanguageModel' in self) {
+  const available = await LanguageModel.availability();
+  if (available === 'unavailable') return;
+
+  // Check for user activation before creating the session
+  if (!navigator.userActivation.isActive) return;
+
+  const session = await LanguageModel.create();
+  const controller = new AbortController();
+  const stream = session.promptStreaming('Explain recursion for beginners', {
+    signal: controller.signal,
   });
-  const stream = session.promptStreaming('Explain recursion for beginners');
-  for await (const chunk of stream) {
-    console.log(chunk);
-  }
+  for await (const chunk of stream) console.log(chunk);
   session.destroy();
 } else {
   console.log('Prompt API not available');
 }`,
           "how_it_works": [
-            "Create a language model session with a system prompt.",
-            "Call promptStreaming() (or prompt()) to get responses.",
-            "Iterate chunks for streaming UI; destroy session on finish."
+            "Feature-detect LanguageModel and call availability() to ensure the model can run on the device.",
+            "After a user gesture, create a session and call prompt() or promptStreaming().",
+            "Pass an AbortSignal to stop a prompt; call destroy() when finished."
           ],
           "use_cases": [
             "In-app assistants, content generation, code explanation, chat features."
@@ -252,26 +279,42 @@ if ('LanguageModel' in window) {
           "title": "Translation API — On-device translation",
           "summary": "Translate text between languages on-device for low-latency, privacy-friendly translations without server roundtrips.",
           "flags": ["#translation-api", "#optimization-guide-on-device-model"],
-          "requirements": "Chrome 138+. Language support varies by build & model version.",
+          "requirements": "Available from Chrome 138. Use Translator.availability({sourceLanguage,targetLanguage}) to check language-pair support. If you don’t know the source language, use the Language Detector API.",
           "options": {
             "sourceLanguage": "ISO code like 'en'",
             "targetLanguage": "ISO code like 'fr'"
           },
           "code_sample": `// Check if Translator API is available
-if ('Translator' in window) {
-  const translator = await Translator.create({
+if ('Translator' in self) {
+  const cap = await Translator.availability({
     sourceLanguage: 'en',
     targetLanguage: 'fr',
   });
-  const result = await translator.translate('Hello world');
+  if (cap === 'unavailable') return;
+
+  // Check for user activation before creating the translator
+  if (!navigator.userActivation.isActive) return;
+
+  const translator = await Translator.create({
+    sourceLanguage: 'en',
+    targetLanguage: 'fr',
+    monitor(m) {
+      m.addEventListener('downloadprogress', (e) => {
+        console.log(\`Downloaded \${e.loaded * 100}%\`);
+      });
+    },
+  });
+
+  const result = await translator.translate('Where is the next bus stop, please?');
   translator.destroy();
 } else {
   console.log('Translator API not available');
 }`,
           "how_it_works": [
-            "Feature detect translator surface (Translator).",
-            "Create an instance with source/target languages.",
-            "Call translate(text) and display result; then destroy."
+            "Feature-detect Translator and call availability({sourceLanguage,targetLanguage}).",
+            "After a user gesture, create a translator (optionally monitor downloadprogress).",
+            "Call translate() (or translateStreaming()) and destroy() when finished.",
+            "If source language is unknown, detect it first with the Language Detector API."
           ],
           "use_cases": [
             "Multilingual chat UIs, content localization, on-device apps with privacy."
@@ -362,6 +405,43 @@ if ('Translator' in window) {
      * Each handler attempts several feature names (Summarizer global or window.ai)
      * so the demo works across slightly different Chrome builds.
      **************************************************************************/
+    function getAiNamespace() {
+      // Chrome builds may expose these experimental APIs on either `globalThis.ai` or `window.ai`.
+      const ai = (typeof globalThis !== 'undefined' && globalThis.ai) ? globalThis.ai : null;
+      if (ai) return ai;
+      return (typeof window !== 'undefined' && window.ai) ? window.ai : null;
+    }
+
+    function getSummarizerSurface() {
+      // Official surface per Chrome docs is the global `Summarizer` (in `self`).
+      // Keep a fallback to `ai.summarizer` for other/older builds.
+      const ai = getAiNamespace();
+      if (typeof Summarizer !== 'undefined') return Summarizer;
+      if (ai && ai.summarizer) return ai.summarizer;
+      return null;
+    }
+
+    function getLanguageModelSurface() {
+      const ai = getAiNamespace();
+      // Builds vary: global `LanguageModel` vs `ai.languageModel` namespace object.
+      if (typeof LanguageModel !== 'undefined') return LanguageModel;
+      if (ai && ai.languageModel) return ai.languageModel;
+      return null;
+    }
+
+    function getTranslatorSurface() {
+      const ai = getAiNamespace();
+      if (ai && (ai.translator || ai.translation)) return (ai.translator || ai.translation);
+      if (typeof Translator !== 'undefined') return Translator;
+      return null;
+    }
+
+    function getLanguageDetectorSurface() {
+      const ai = getAiNamespace();
+      if (ai && ai.languageDetector) return ai.languageDetector;
+      if (typeof LanguageDetector !== 'undefined') return LanguageDetector;
+      return null;
+    }
 
     // ---------- Summariser ----------
     document.getElementById('sumRun').addEventListener('click', async () => {
@@ -380,28 +460,56 @@ if ('Translator' in window) {
       statusEl.textContent = 'Preparing…';
       outEl.textContent = '';
 
-      const hasGlobal = typeof Summarizer !== 'undefined';
-      const hasWrapper = window.ai && typeof window.ai.summarizer !== 'undefined';
-
-      if (!hasGlobal && !hasWrapper) {
-        outEl.textContent = 'Summariser not available in this browser. Try Chrome Canary/Dev and enable #summarizer-api.';
+      const summarizerSurface = getSummarizerSurface();
+      if (!summarizerSurface) {
+        outEl.textContent = 'Summariser not available in this browser. In supported Chrome builds, feature-detect with: `("Summarizer" in self)`.';
         statusEl.textContent = '';
         return;
       }
 
       try {
-        const opts = { type: 'key-points', format: 'plain-text', length: 'short', sharedContext: 'Playground summarise' };
-        let availability, s;
+        const opts = {
+          type: 'key-points',
+          format: 'plain-text',
+          length: 'short',
+          sharedContext: 'Playground summarise',
+          // Per docs: show model download progress if needed.
+          monitor(m) {
+            try {
+              m.addEventListener('downloadprogress', (e) => {
+                const pct = Math.round((e.loaded || 0) * 100);
+                statusEl.textContent = `Downloading model… ${pct}%`;
+              });
+            } catch (e) {
+              // ignore monitor wiring issues
+            }
+          },
+        };
 
-        if (hasGlobal) {
-          availability = await Summarizer.availability(opts);
-          if (availability === 'unavailable') throw new Error('Unavailable for options');
-          s = await Summarizer.create(opts);
-        } else {
-          availability = await window.ai.summarizer.availability(opts);
-          if (availability === 'unavailable') throw new Error('Unavailable for options');
-          s = await window.ai.summarizer.create(opts);
+        let availability;
+        if (typeof summarizerSurface.availability === 'function') {
+          // Docs show availability() with no args; some builds accept options—try both.
+          try {
+            availability = await summarizerSurface.availability(opts);
+          } catch (e) {
+            availability = await summarizerSurface.availability();
+          }
+          if (availability === 'unavailable') {
+            outEl.textContent = 'Summariser is unavailable on this device/browser (hardware + model requirements may not be met).';
+            statusEl.textContent = '';
+            return;
+          }
         }
+
+        // Docs recommend checking for user activation before create().
+        if (navigator.userActivation && navigator.userActivation.isActive === false) {
+          outEl.textContent = 'User activation required. Click the Run button again to allow model download/creation.';
+          statusEl.textContent = '';
+          return;
+        }
+
+        statusEl.textContent = availability === 'downloadable' ? 'Model download may start…' : 'Starting…';
+        const s = await summarizerSurface.create(opts);
 
         statusEl.textContent = 'Running model…';
         // Some implementations return a string; others may stream — we assume a string result here.
@@ -443,8 +551,8 @@ if ('Translator' in window) {
         return;
       }
 
-      // Check for modern API surface
-      if (typeof LanguageModel !== 'function') {
+      const languageModelSurface = getLanguageModelSurface();
+      if (!languageModelSurface) {
         outputEl.textContent = 'Prompt API not found. Try Chrome Dev/Canary with flags.';
         statusEl.textContent = '';
         return;
@@ -453,23 +561,66 @@ if ('Translator' in window) {
       try {
         // Abort controller for cancellation
         const controller = new AbortController();
+        promptAbort = controller;
         stopButton.onclick = () => controller.abort();
 
-        const promptSession = await LanguageModel.create({
-          signal: controller.signal,
-          initialPrompts: [
-            {
-              role: 'system',
-              content:
-                'You are a helpful assistant. Keep answers concise.',
-            },
-          ]
-        });
+        // Per docs: check availability before create().
+        if (typeof languageModelSurface.availability === 'function') {
+          // Keep availability options consistent with prompt/promptStreaming options.
+          const available = await languageModelSurface.availability();
+          if (available === 'unavailable') {
+            outputEl.textContent =
+              'Prompt model is unavailable on this device/browser (hardware + model requirements may not be met).';
+            statusEl.textContent = '';
+            return;
+          }
+        }
+
+        // Per docs: require user activation before create() (model download may trigger).
+        if (navigator.userActivation && navigator.userActivation.isActive === false) {
+          outputEl.textContent =
+            'User activation required. Click Run again to allow model download/creation.';
+          statusEl.textContent = '';
+          return;
+        }
+
+        const createFn =
+          (languageModelSurface && typeof languageModelSurface.create === 'function')
+            ? languageModelSurface.create.bind(languageModelSurface)
+            : null;
+
+        if (!createFn) throw new Error('LanguageModel surface missing create()');
+
+        // Create a session. Different builds may accept different fields; try the most "official" / stable shapes first.
+        try {
+          promptSession = await createFn({ signal: controller.signal });
+        } catch (e) {
+          // Some experimental builds require options object without signal.
+          promptSession = await createFn();
+        }
+
+        // If supported, set a system prompt without generating output.
+        // (Docs mention session management and `append()`; not all builds have it.)
+        try {
+          if (promptSession && typeof promptSession.append === 'function') {
+            await promptSession.append([
+              { role: 'system', content: 'You are a helpful assistant. Keep answers concise.' },
+            ]);
+          }
+        } catch (e) {
+          // ignore if unsupported
+        }
         
         statusEl.textContent = 'Streaming…';
 
         // Start streaming — pass signal if accepted by implementation
-        const streamIter = promptSession.promptStreaming(promptText);
+        let streamIter;
+        try {
+          // Some builds accept (text, {signal}); others accept just (text).
+          streamIter = promptSession.promptStreaming(promptText, { signal: controller.signal });
+        } catch (e) {
+          streamIter = promptSession.promptStreaming(promptText);
+        }
 
         for await (const chunk of streamIter) {
           outputEl.textContent += chunk;
@@ -499,8 +650,9 @@ if ('Translator' in window) {
       }
       if (promptSession && typeof promptSession.destroy === 'function') {
         try { promptSession.destroy(); } catch(e) {}
-        promptSession = null;
       }
+      promptSession = null;
+      promptAbort = null;
       document.getElementById('promptStatus').textContent = '';
     });
 
@@ -520,29 +672,81 @@ if ('Translator' in window) {
       statusEl.textContent = 'Preparing…';
 
       const text = document.getElementById('transLeftInput').value.trim();
-      const from = (document.getElementById('transLeftFrom').value || 'en').trim();
+      const fromInput = document.getElementById('transLeftFrom').value.trim();
       const to = (document.getElementById('transLeftTo').value || 'fr').trim();
 
       if (!text) {
         outEl.textContent = 'Please enter text to translate.';
-        statusEg = '';
-        return;
-      }
-      // Feature detect likely translator surfaces
-      const translatorAPI = window.ai && (window.ai.translator || window.ai.translation) ? (window.ai.translator || window.ai.translation) : null;
-      if (!('Translator' in self)) {
-        outEl.textContent = 'Translation API not available. Try Chrome Dev/Canary with flags.';
         statusEl.textContent = '';
         return;
       }
 
       try {
+        // Prefer the official Chrome surface: global Translator in self.
+        // Keep fallbacks to other surfaces for experimental builds.
+        const hasOfficialTranslator = ('Translator' in self) && typeof Translator !== 'undefined';
+        const translatorSurface = hasOfficialTranslator ? Translator : getTranslatorSurface();
+        if (!translatorSurface) {
+          outEl.textContent = 'Translation API not available. Feature-detect with: `("Translator" in self)`.';
+          statusEl.textContent = '';
+          return;
+        }
+
+        // Determine source language: explicit "From" or try Language Detector when blank.
+        let from = fromInput;
+        if (!from) {
+          const detectorSurface = getLanguageDetectorSurface();
+          if (detectorSurface && typeof detectorSurface.create === 'function') {
+            statusEl.textContent = 'Detecting language…';
+            try {
+              const detector = await detectorSurface.create();
+              const detection = await detector.detect(text);
+              // Take the top language if present; fall back to 'en'.
+              if (Array.isArray(detection) && detection[0] && detection[0].language) {
+                from = detection[0].language;
+              }
+              if (detector && typeof detector.destroy === 'function') detector.destroy();
+            } catch (e) {
+              // If detection fails, continue with a sensible default.
+            }
+          }
+          if (!from) from = 'en';
+        }
+
+        // Per docs: check availability for the language pair (and pass same options used in create()).
+        if (typeof translatorSurface.availability === 'function') {
+          const cap = await translatorSurface.availability({ sourceLanguage: from, targetLanguage: to });
+          if (cap === 'unavailable') {
+            outEl.textContent = `Translator unavailable for ${from}→${to} on this device/browser.`;
+            statusEl.textContent = '';
+            return;
+          }
+        }
+
+        // Per docs: require user activation before create() (language packs may download).
+        if (navigator.userActivation && navigator.userActivation.isActive === false) {
+          outEl.textContent = 'User activation required. Click Translate again to allow model download/creation.';
+          statusEl.textContent = '';
+          return;
+        }
+
         let translatorInstance;
-        // Some builds require create({sourceLanguage, targetLanguage})
-        if (typeof Translator.create === 'function') {
-          translatorInstance = await Translator.create({ sourceLanguage: from, targetLanguage: to });
+        // Preferred: instance-based API via create()
+        if (typeof translatorSurface.create === 'function') {
+          translatorInstance = await translatorSurface.create({
+            sourceLanguage: from,
+            targetLanguage: to,
+            monitor(m) {
+              try {
+                m.addEventListener('downloadprogress', (e) => {
+                  const pct = Math.round((e.loaded || 0) * 100);
+                  statusEl.textContent = `Downloading language pack… ${pct}%`;
+                });
+              } catch (e) {}
+            },
+          });
         } else {
-          translatorInstance = translatorAPI;
+          translatorInstance = translatorSurface;
         }
 
         statusEl.textContent = 'Translating…';
@@ -550,8 +754,9 @@ if ('Translator' in window) {
         let translated;
         if (typeof translatorInstance.translate === 'function') {
           translated = await translatorInstance.translate(text);
-        } else if (typeof translatorAPI.translate === 'function') {
-          translated = await translatorAPI.translate(text, { from, to });
+        } else if (typeof translatorSurface.translate === 'function') {
+          // Some builds expose a single translate(text, {from,to}) without instance creation.
+          translated = await translatorSurface.translate(text, { from, to });
         } else {
           throw new Error('No translate() method found on translator API');
         }
