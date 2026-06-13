@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housie Number Generator</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background: #f4f6f9;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        margin-bottom: 20px;
+    }
+
+    .number-display {
+        width: 180px;
+        height: 180px;
+        margin: 20px auto;
+        border-radius: 50%;
+        background: #2c3e50;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 64px;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    button {
+        padding: 12px 24px;
+        font-size: 18px;
+        margin: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .draw-btn {
+        background: #27ae60;
+        color: white;
+    }
+
+    .reset-btn {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .stats {
+        margin-top: 15px;
+        font-size: 18px;
+    }
+
+    .history {
+        margin-top: 30px;
+    }
+
+    .numbers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 8px;
+        max-width: 700px;
+        margin: auto;
+    }
+
+    .num {
+        background: white;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+</style>
+</head>
+<body>
+
+<h1>🎲 Housie Number Generator</h1>
+
+<div class="number-display" id="currentNumber">--</div>
+
+<button class="draw-btn" onclick="drawNumber()">Draw Number</button>
+<button class="reset-btn" onclick="resetGame()">Reset</button>
+
+<div class="stats">
+    Drawn: <span id="drawnCount">0</span> / 90
+</div>
+
+<div class="history">
+    <h2>Drawn Numbers</h2>
+    <div class="numbers-grid" id="history"></div>
+</div>
+
+<script>
+let availableNumbers = [];
+let drawnNumbers = [];
+
+function initializeGame() {
+    availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+    drawnNumbers = [];
+    document.getElementById("currentNumber").textContent = "--";
+    document.getElementById("history").innerHTML = "";
+    document.getElementById("drawnCount").textContent = "0";
+}
+
+function drawNumber() {
+    if (availableNumbers.length === 0) {
+        alert("All 90 numbers have been drawn!");
+        return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+    const number = availableNumbers.splice(randomIndex, 1)[0];
+
+    drawnNumbers.push(number);
+
+    document.getElementById("currentNumber").textContent = number;
+    document.getElementById("drawnCount").textContent = drawnNumbers.length;
+
+    const item = document.createElement("div");
+    item.className = "num";
+    item.textContent = number;
+
+    document.getElementById("history").prepend(item);
+}
+
+function resetGame() {
+    if (confirm("Start a new game?")) {
+        initializeGame();
+    }
+}
+
+initializeGame();
+</script>
+
+</body>
+</html>
