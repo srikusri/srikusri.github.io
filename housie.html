@@ -3,140 +3,351 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Housie Number Generator</title>
-
+<title>Housie Pro - Multi Game</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background: #f4f6f9;
-        margin: 0;
-        padding: 20px;
+*{
+    box-sizing:border-box;
+}
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f5f7fa;
+}
+.container{
+    display:flex;
+    min-height:100vh;
+}
+.sidebar{
+    width:320px;
+    background:white;
+    border-right:1px solid #ddd;
+    padding:15px;
+    overflow-y:auto;
+}
+.main{
+    flex:1;
+    padding:20px;
+    text-align:center;
+}
+h1,h2,h3{
+    margin-top:0;
+}
+button{
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    padding:10px 16px;
+    margin:4px;
+}
+.primary{
+    background:#27ae60;
+    color:white;
+}
+.secondary{
+    background:#3498db;
+    color:white;
+}
+.danger{
+    background:#e74c3c;
+    color:white;
+}
+.number-display{
+    width:220px;
+    height:220px;
+    margin:20px auto;
+    border-radius:50%;
+    background:#2c3e50;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:72px;
+    font-weight:bold;
+    box-shadow:0 5px 15px rgba(0,0,0,0.25);
+}
+.stats{
+    font-size:20px;
+    margin:15px 0;
+}
+.board{
+    max-width:900px;
+    margin:20px auto;
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    gap:6px;
+}
+.board-number{
+    background:white;
+    padding:10px;
+    border-radius:6px;
+    font-weight:bold;
+    border:1px solid #ddd;
+}
+.drawn{
+    background:#27ae60;
+    color:white;
+}
+.game-card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:10px;
+    background:#fafafa;
+}
+.game-card.active{
+    border:2px solid #3498db;
+}
+.small{
+    color:#666;
+    font-size:12px;
+}
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+.history{
+    max-width:900px;
+    margin:auto;
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+    justify-content:center;
+}
+.history span{
+    background:white;
+    border:1px solid #ddd;
+    padding:5px 10px;
+    border-radius:5px;
+}
+@media(max-width:768px){
+    .container{
+        flex-direction:column;
     }
-
-    h1 {
-        margin-bottom: 20px;
+    .sidebar{
+        width:100%;
+        border-right:none;
+        border-bottom:1px solid #ddd;
     }
-
-    .number-display {
-        width: 180px;
-        height: 180px;
-        margin: 20px auto;
-        border-radius: 50%;
-        background: #2c3e50;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 64px;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    .board{
+        grid-template-columns:repeat(5,1fr);
     }
-
-    button {
-        padding: 12px 24px;
-        font-size: 18px;
-        margin: 10px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .draw-btn {
-        background: #27ae60;
-        color: white;
-    }
-
-    .reset-btn {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .stats {
-        margin-top: 15px;
-        font-size: 18px;
-    }
-
-    .history {
-        margin-top: 30px;
-    }
-
-    .numbers-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-        gap: 8px;
-        max-width: 700px;
-        margin: auto;
-    }
-
-    .num {
-        background: white;
-        padding: 10px;
-        border-radius: 6px;
-        font-weight: bold;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
+}
 </style>
 </head>
 <body>
-
-<h1>🎲 Housie Number Generator</h1>
-
-<div class="number-display" id="currentNumber">--</div>
-
-<button class="draw-btn" onclick="drawNumber()">Draw Number</button>
-<button class="reset-btn" onclick="resetGame()">Reset</button>
-
-<div class="stats">
-    Drawn: <span id="drawnCount">0</span> / 90
+<div class="container">
+    <div class="sidebar">
+        <h2>🎲 Games</h2>
+        <input id="gameName" placeholder="Game name"/>
+        <button class="secondary" onclick="createNewGame()">
+            ➕ New Game
+        </button>
+        <hr>
+        <div id="gamesList"></div>
+    </div>
+    <div class="main">
+        <h1 id="currentGameTitle">No Game Selected</h1>
+        <div class="number-display" id="currentNumber">
+            --
+        </div>
+        <div class="stats">
+            Drawn:
+            <span id="drawCount">0</span>/90
+        </div>
+        <button class="primary" onclick="drawNumber()">
+            Draw Number
+        </button>
+        <button class="danger" onclick="resetCurrentGame()">
+            Restart Game
+        </button>
+        <h3>History</h3>
+        <div id="history" class="history"></div>
+        <h3>Board</h3>
+        <div id="board" class="board"></div>
+    </div>
 </div>
-
-<div class="history">
-    <h2>Drawn Numbers</h2>
-    <div class="numbers-grid" id="history"></div>
-</div>
-
 <script>
-let availableNumbers = [];
-let drawnNumbers = [];
-
-function initializeGame() {
-    availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
-    drawnNumbers = [];
-    document.getElementById("currentNumber").textContent = "--";
-    document.getElementById("history").innerHTML = "";
-    document.getElementById("drawnCount").textContent = "0";
+const STORAGE_KEY = "housie_last_5_games";
+let currentGame = null;
+function loadGames(){
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 }
-
-function drawNumber() {
-    if (availableNumbers.length === 0) {
-        alert("All 90 numbers have been drawn!");
+function saveGames(games){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+}
+function generateBoard(){
+    let html = "";
+    for(let i=1;i<=90;i++){
+        const drawn = currentGame &&
+                      currentGame.drawnNumbers.includes(i);
+        html += `
+            <div class="board-number ${drawn ? 'drawn' : ''}">
+                ${i}
+            </div>
+        `;
+    }
+    document.getElementById("board").innerHTML = html;
+}
+function renderHistory(){
+    if(!currentGame){
+        document.getElementById("history").innerHTML = "";
         return;
     }
-
-    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
-    const number = availableNumbers.splice(randomIndex, 1)[0];
-
-    drawnNumbers.push(number);
-
-    document.getElementById("currentNumber").textContent = number;
-    document.getElementById("drawnCount").textContent = drawnNumbers.length;
-
-    const item = document.createElement("div");
-    item.className = "num";
-    item.textContent = number;
-
-    document.getElementById("history").prepend(item);
+    document.getElementById("history").innerHTML =
+        [...currentGame.drawnNumbers]
+        .reverse()
+        .map(n => `<span>${n}</span>`)
+        .join("");
 }
-
-function resetGame() {
-    if (confirm("Start a new game?")) {
-        initializeGame();
+function renderGame(){
+    if(!currentGame){
+        return;
+    }
+    document.getElementById("currentGameTitle").innerText =
+        currentGame.name;
+    document.getElementById("currentNumber").innerText =
+        currentGame.currentNumber ?? "--";
+    document.getElementById("drawCount").innerText =
+        currentGame.drawnNumbers.length;
+    generateBoard();
+    renderHistory();
+    renderGamesList();
+}
+function renderGamesList(){
+    const games = loadGames();
+    document.getElementById("gamesList").innerHTML =
+        games.map(game => `
+            <div class="game-card ${currentGame && currentGame.id===game.id ? 'active':''}">
+                <strong>${game.name}</strong><br>
+                <span class="small">
+                    ${game.status}
+                </span><br>
+                Drawn: ${game.drawnNumbers.length}/90
+                <br><br>
+                <button class="secondary"
+                    onclick="loadGame('${game.id}')">
+                    Resume
+                </button>
+            </div>
+        `).join("");
+}
+function createNewGame(){
+    let games = loadGames();
+    const name =
+        document.getElementById("gameName").value.trim()
+        || `Game ${games.length + 1}`;
+    const game = {
+        id: "game_" + Date.now(),
+        name,
+        createdAt: new Date().toISOString(),
+        lastPlayedAt: new Date().toISOString(),
+        currentNumber: null,
+        status: "IN_PROGRESS",
+        drawnNumbers: [],
+        availableNumbers:
+            Array.from({length:90},(_,i)=>i+1)
+    };
+    games.unshift(game);
+    if(games.length > 5){
+        games = games.slice(0,5);
+    }
+    saveGames(games);
+    currentGame = game;
+    document.getElementById("gameName").value = "";
+    renderGame();
+}
+function saveCurrentGame(){
+    if(!currentGame) return;
+    const games = loadGames();
+    const idx =
+        games.findIndex(g => g.id === currentGame.id);
+    if(idx >= 0){
+        currentGame.lastPlayedAt =
+            new Date().toISOString();
+        games[idx] = currentGame;
+        saveGames(games);
     }
 }
-
-initializeGame();
+function loadGame(gameId){
+    const games = loadGames();
+    currentGame =
+        games.find(g => g.id === gameId);
+    localStorage.setItem(
+        "current_housie_game",
+        gameId
+    );
+    renderGame();
+}
+function drawNumber(){
+    if(!currentGame){
+        alert("Create or select a game.");
+        return;
+    }
+    if(currentGame.availableNumbers.length === 0){
+        currentGame.status = "COMPLETED";
+        saveCurrentGame();
+        alert("All numbers drawn!");
+        renderGame();
+        return;
+    }
+    const randomIndex =
+        Math.floor(
+            Math.random() *
+            currentGame.availableNumbers.length
+        );
+    const number =
+        currentGame.availableNumbers.splice(
+            randomIndex,
+            1
+        )[0];
+    currentGame.currentNumber = number;
+    currentGame.drawnNumbers.push(number);
+    if(currentGame.availableNumbers.length === 0){
+        currentGame.status = "COMPLETED";
+    }
+    saveCurrentGame();
+    renderGame();
+}
+function resetCurrentGame(){
+    if(!currentGame){
+        return;
+    }
+    if(!confirm("Restart this game?")){
+        return;
+    }
+    currentGame.currentNumber = null;
+    currentGame.status = "IN_PROGRESS";
+    currentGame.drawnNumbers = [];
+    currentGame.availableNumbers =
+        Array.from({length:90},(_,i)=>i+1);
+    saveCurrentGame();
+    renderGame();
+}
+function initialize(){
+    renderGamesList();
+    const lastGameId =
+        localStorage.getItem(
+            "current_housie_game"
+        );
+    const games = loadGames();
+    if(lastGameId){
+        const game =
+            games.find(g => g.id === lastGameId);
+        if(game){
+            currentGame = game;
+            renderGame();
+            return;
+        }
+    }
+    if(games.length){
+        currentGame = games[0];
+        renderGame();
+    }
+}
+initialize();
 </script>
-
 </body>
 </html>
